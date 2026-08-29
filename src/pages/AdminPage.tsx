@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/lib/supabase";
 import { Settings, UserPlus, Shield } from "lucide-react";
 
 // Demo user table — in production, this would come from Supabase

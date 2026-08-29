@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,7 +58,7 @@ export default function AuthPage(props: AuthProps) {
     searchParams.get("returnTo"),
     props.redirectAfterAuth
   );
-  const { signIn, signUp } = useAuth();
+  const { signIn, signInDemo, signUp } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -95,16 +94,10 @@ export default function AuthPage(props: AuthProps) {
     setSuccess(null);
 
     try {
-      // Demo login: try sign in first, if user doesn't exist, sign up
-      try {
-        await signIn(demoEmail, "DemoPassword123!");
-      } catch {
-        await signUp(demoEmail, "DemoPassword123!");
-        await signIn(demoEmail, "DemoPassword123!");
-      }
+      await signInDemo(demoEmail);
       navigate(redirect);
     } catch (err) {
-      setError("Demo login failed. Supabase may not be configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.");
+      setError("Demo login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
