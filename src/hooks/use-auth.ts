@@ -21,6 +21,26 @@ const DEMO_ROLES: Record<string, { role: UserRole; name: string; org_unit: strin
   "admin@demo.local": { role: "admin", name: "System Admin", org_unit: "IT Administration" },
 };
 
+const DEMO_PROFILE_KEY = "ai_kavach_demo_profile";
+
+function loadDemoProfile(): UserProfile | null {
+  try {
+    const raw = sessionStorage.getItem(DEMO_PROFILE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as UserProfile;
+  } catch {
+    return null;
+  }
+}
+
+function saveDemoProfile(profile: UserProfile | null) {
+  if (profile) {
+    sessionStorage.setItem(DEMO_PROFILE_KEY, JSON.stringify(profile));
+  } else {
+    sessionStorage.removeItem(DEMO_PROFILE_KEY);
+  }
+}
+
 export function useAuth() {
   const { signIn, signOut } = useAuthActions();
   const token = useAuthToken();
@@ -29,8 +49,8 @@ export function useAuth() {
   // Query the user's Convex profile (returns undefined while loading, null if not found)
   const convexUser = useQuery(api.socData.getUserRole);
 
-  // Local demo profile for anonymous users
-  const [demoProfile, setDemoProfile] = useState<UserProfile | null>(null);
+  // Local demo profile for anonymous users — persisted in sessionStorage
+  const [demoProfile, setDemoProfile] = useState<UserProfile | null>(loadDemoProfile);
 
   // Build the effective profile
   let user: UserProfile | null = null;
@@ -100,13 +120,16 @@ export function useAuth() {
         org_unit: "Security Operations",
       };
 
-      setDemoProfile({
+      const profile: UserProfile = {
         id: `demo_${demoEmail}`,
         email: demoEmail,
         name: roleInfo.name,
         role: roleInfo.role,
         org_unit: roleInfo.org_unit,
-      });
+      };
+
+      setDemoProfile(profile);
+      saveDemoProfile(profile);
     },
     [signIn]
   );
@@ -114,6 +137,7 @@ export function useAuth() {
   const handleSignOut = useCallback(async () => {
     await signOut();
     setDemoProfile(null);
+    saveDemoProfile(null);
   }, [signOut]);
 
   return {
