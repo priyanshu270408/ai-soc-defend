@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { SOCLayout } from "@/components/SOCLayout";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Settings, UserPlus, Shield } from "lucide-react";
+import { Settings, UserPlus, Shield, Database, Loader2, CheckCircle2 } from "lucide-react";
 
 // Demo user table — in production, this would come from Supabase
 const DEMO_USERS = [
@@ -34,6 +37,23 @@ function roleBadgeColor(role: string): string {
 }
 
 export default function AdminPage() {
+  const seedData = useMutation(api.socData.seedAllData);
+  const [seeding, setSeeding] = useState(false);
+  const [seedStatus, setSeedStatus] = useState<string | null>(null);
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    setSeedStatus(null);
+    try {
+      const result = await seedData({});
+      setSeedStatus(result.status === "already_seeded" ? "Data already seeded!" : "✓ Database seeded successfully!");
+    } catch (err) {
+      setSeedStatus("Failed to seed data. Check console.");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <SOCLayout>
       <RoleGuard allowedRoles={["admin"]}>
@@ -50,6 +70,39 @@ export default function AdminPage() {
               Add User
             </Button>
           </div>
+
+          {/* Seed Data Card */}
+          <Card className="border-border/50 bg-card/60">
+            <CardContent className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <Database className="size-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Synthetic Data</p>
+                  <p className="text-[11px] text-muted-foreground">Seed 18 users, 13 assets, ~800 events, 3 storyline alerts</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {seedStatus && (
+                  <span className="text-xs text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="size-3" />
+                    {seedStatus}
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={handleSeed}
+                  disabled={seeding}
+                >
+                  {seeding ? <Loader2 className="size-3.5 animate-spin" /> : <Database className="size-3.5" />}
+                  {seeding ? "Seeding..." : "Seed Data"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Role summary */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -122,7 +175,7 @@ export default function AdminPage() {
           </Card>
 
           <p className="text-[11px] text-muted-foreground/60 text-center">
-            This is a demo admin panel. In production, user management would integrate with Supabase Auth and your backend.
+            This is a demo admin panel. Use the Seed Data button above to populate the database with synthetic telemetry.
           </p>
         </div>
       </RoleGuard>
